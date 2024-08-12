@@ -8,10 +8,12 @@ import numpy as np
 
 st.set_page_config(layout="wide")
 
-mappable_df_path = "WVCS_Mappable_CSV.csv"
+mappable_df_path = "Datasets/WVCS_Mappable_CSV.csv"
+global mappable_df 
 mappable_df = pd.read_csv(mappable_df_path) #Creates dataframe from CSV file of neighborhood geometry and statistics
 mappable_df["the_geom"] = mappable_df["the_geom"].apply(shapely.wkt.loads)
 
+global mappable_gdf
 mappable_gdf = gpd.GeoDataFrame(mappable_df, geometry = "the_geom", crs = "epsg:4326") #Turns dataframe into a GeoDataFrame for mapping
 
 columns_with_description = {
@@ -44,16 +46,49 @@ mappable_gdf[to_multiply] = mappable_gdf[to_multiply].mul(100).round(2) #Multipl
 mappable_df[to_multiply] = mappable_df[to_multiply].mul(100).round(2)
 
 #Creates sidepanel to select different metrics
-def create_sidepanel ():
+def create_sidepanel():
+    global mappable_df
+    global mappable_gdf
     options = list(columns_with_description.keys())
     selectbox = st.sidebar.selectbox(
         "Choose A Statistic To Display", 
-        options = options
+        options = options,
+        index = 0
     )
-    return selectbox
+    neighborhood_options = mappable_gdf["Neighborhood Name"].unique()
+    default_neighborhoods = [
+        "Cupertino - Eastside",
+        "Cupertino - Northside",
+        "Cupertino - Southside",
+        "Cupertino - Westside",
+        "Los Gatos - Eastern",
+        "Saratoga - Northwestern",
+        "Saratoga - Southeastern",
+        "San Tomas - North",
+        "San Tomas - South",
+        "Monte Sereno/Los Gatos - Western",
+        "Cambrian Park West",
+        "Cambrian Park West Central",
+        "Calabazas",
+        "Santa Clara - Southwest",
+        "Santa Clara - West Central",
+        "West San Jose",
+        "Winchester West",
+        "Winchester East"
+    ]
+    st.write(np.sort(neighborhood_options))
+    multiselect = st.sidebar.multiselect(
+        "Choose the neighborhoods to display",
+        options = neighborhood_options,
+        default = default_neighborhoods
+    )
+    mappable_gdf = mappable_gdf[mappable_gdf["Neighborhood Name"].isin(multiselect)]
+    mappable_df = mappable_df[mappable_df["Neighborhood Name"].isin(multiselect)]
+    return selectbox, multiselect
+    
 
 #Displays the top/bottom three neighborhoods for the selected metric
-def select_top_3 (column_description):
+def select_top_3 (column_description, mappable_df):
     column = columns_with_description[column_description]
     if ordering[column_description] == "bottom":
         top_3 = np.sort(mappable_df[column])[::-1][:3]
@@ -72,7 +107,7 @@ def select_top_3 (column_description):
     return neighborhoods, top_3_df
 
 #Creates the map that should be displayed on the screen
-def create_map (column_description):
+def create_map (column_description, mappable_gdf):
     map = folium.Map(location = [37.2200, -121.6000], zoom_start = 10)
     folium.TileLayer('CartoDB positron',name="Light Map",control=False).add_to(map)
     #Defines the Choropleth map
@@ -99,10 +134,7 @@ def create_map (column_description):
 
     st_map = st_folium(map, use_container_width=True, height = 600)
 
-def main():
-    selection = create_sidepanel()
-    select_top_3(selection)
-    create_map(selection)
 
-if __name__ == "__main__":
-    main()
+selection, multiselect = create_sidepanel()
+select_top_3(selection, mappable_df = mappable_df)
+create_map(selection, mappable_gdf = mappable_gdf)
