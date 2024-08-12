@@ -8,7 +8,7 @@ import numpy as np
 
 st.set_page_config(layout="wide")
 
-mappable_df_path = "Datasets/WVCS_Mappable_CSV.csv"
+mappable_df_path = "WVCS_Mappable_CSV.csv"
 global mappable_df 
 mappable_df = pd.read_csv(mappable_df_path) #Creates dataframe from CSV file of neighborhood geometry and statistics
 mappable_df["the_geom"] = mappable_df["the_geom"].apply(shapely.wkt.loads)
