@@ -76,7 +76,6 @@ def create_sidepanel():
         "Winchester West",
         "Winchester East"
     ]
-    st.write(np.sort(neighborhood_options))
     multiselect = st.sidebar.multiselect(
         "Choose the neighborhoods to display",
         options = neighborhood_options,
