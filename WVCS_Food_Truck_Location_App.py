@@ -8,7 +8,7 @@ import numpy as np
 
 st.set_page_config(layout="wide")
 
-mappable_df_path = "WVCS_Mappable_CSV.csv"
+mappable_df_path = "Datasets/WVCS_Mappable_CSV.csv"
 global mappable_df 
 mappable_df = pd.read_csv(mappable_df_path) #Creates dataframe from CSV file of neighborhood geometry and statistics
 mappable_df["the_geom"] = mappable_df["the_geom"].apply(shapely.wkt.loads)
@@ -55,6 +55,10 @@ def create_sidepanel():
         options = options,
         index = 0
     )
+
+    clear_button = st.sidebar.button("Clear Neighborhood Selections")
+    default_button = st.sidebar.button("Reset selections to default")
+
     neighborhood_options = mappable_gdf["Neighborhood Name"].unique()
     default_neighborhoods = [
         "Cupertino - Eastside",
@@ -76,11 +80,19 @@ def create_sidepanel():
         "Winchester West",
         "Winchester East"
     ]
+    
     multiselect = st.sidebar.multiselect(
         "Choose the neighborhoods to display",
         options = neighborhood_options,
         default = default_neighborhoods
     )
+
+    if len(multiselect) == 0 or clear_button:
+        multiselect = neighborhood_options
+    
+    if default_button:
+        multiselect = default_neighborhoods
+
     mappable_gdf = mappable_gdf[mappable_gdf["Neighborhood Name"].isin(multiselect)]
     mappable_df = mappable_df[mappable_df["Neighborhood Name"].isin(multiselect)]
     return selectbox, multiselect
